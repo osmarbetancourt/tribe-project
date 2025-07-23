@@ -1,4 +1,3 @@
-// ...existing code...
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import Avatar from './Avatar';
@@ -80,7 +79,7 @@ function isMessageEdited(message) {
   return (!isNaN(sentAt) && !isNaN(updatedAt) && updatedAt > sentAt);
 }
 
-const MessageItem = ({ message, showHeader = true, reducedMargin = false, onParticipantPress }) => {
+const MessageItem = React.memo(({ message, showHeader = true, reducedMargin = false, onParticipantPress, onReactionsPress, participants }) => {
   const [modalVisible, setModalVisible] = useState(false);
 
   const { name, avatar, isYou } = extractParticipantInfo(message);
@@ -89,6 +88,22 @@ const MessageItem = ({ message, showHeader = true, reducedMargin = false, onPart
   const reactions = message.reactions || message.reaction || [];
   const { image, imageWidth, imageHeight } = extractImageInfo(message);
   const edited = isMessageEdited(message);
+
+  // Quoted message logic
+  const quoted = message.replyToMessage;
+  let quotedAuthor = 'Unknown';
+  if (quoted) {
+    if (quoted.participant?.name) {
+      quotedAuthor = quoted.participant.name;
+    } else if (quoted.authorUuid === 'you') {
+      quotedAuthor = 'You';
+    } else if (participants && Array.isArray(participants)) {
+      const found = participants.find(p => p.uuid === quoted.authorUuid);
+      if (found && found.name) quotedAuthor = found.name;
+    }
+  }
+  let quotedText = quoted ? extractTextContent(quoted) : null;
+  let quotedImageInfo = quoted ? extractImageInfo(quoted) : {};
 
   const containerStyle = [
     styles.container,
@@ -110,6 +125,16 @@ const MessageItem = ({ message, showHeader = true, reducedMargin = false, onPart
       ) : null}
       {/* Always show time below header */}
       <Text style={styles.time}>{time}</Text>
+      {/* Quoted message box */}
+      {quoted && (
+        <View style={styles.quotedBox}>
+          <Text style={styles.quotedAuthor}>{quotedAuthor}</Text>
+          <Text style={styles.quotedText}>{quotedText}</Text>
+          {quotedImageInfo.image && (
+            <Image source={{ uri: quotedImageInfo.image }} style={[styles.quotedImage, { width: quotedImageInfo.imageWidth || 80, height: quotedImageInfo.imageHeight || 80 }]} />
+          )}
+        </View>
+      )}
       <Text style={styles.text}>{text}</Text>
       {image && (
         <>
@@ -122,9 +147,9 @@ const MessageItem = ({ message, showHeader = true, reducedMargin = false, onPart
             animationType="fade"
             onRequestClose={() => setModalVisible(false)}
           >
-            <View style={styles.modalOverlay}>
-              <TouchableOpacity style={styles.modalImageContainer} onPress={() => setModalVisible(false)}>
-                <Image source={{ uri: image }} style={styles.modalImage} />
+            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center' }}>
+              <TouchableOpacity style={{ flex: 1, width: '100%' }} onPress={() => setModalVisible(false)}>
+                <Image source={{ uri: image }} style={{ width: '90%', height: '70%', resizeMode: 'contain', borderRadius: 12, alignSelf: 'center' }} />
               </TouchableOpacity>
             </View>
           </Modal>
@@ -132,14 +157,14 @@ const MessageItem = ({ message, showHeader = true, reducedMargin = false, onPart
       )}
       {reactions && reactions.length > 0 && (
         <View style={{ minHeight: 32, marginTop: 4, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
-          <ReactionRow reactions={reactions} />
+          <ReactionRow reactions={reactions} onPress={onReactionsPress} />
         </View>
       )}
       {/* Show edited indicator at the bottom if edited */}
       {edited && <Text style={styles.edited}>(edited)</Text>}
     </View>
   );
-};
+});
 const styles = StyleSheet.create({
   container: {
     borderRadius: 8,
@@ -197,28 +222,38 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     wordBreak: 'break-word',
   },
+  quotedBox: {
+    borderLeftWidth: 3,
+    borderLeftColor: '#007AFF',
+    backgroundColor: '#f0f4fa',
+    padding: 8,
+    marginBottom: 8,
+    marginTop: 2,
+    borderRadius: 6,
+  },
+  quotedAuthor: {
+    fontWeight: 'bold',
+    color: '#007AFF',
+    fontSize: 13,
+    marginBottom: 2,
+  },
+  quotedText: {
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 4,
+  },
+  quotedImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 6,
+    marginTop: 4,
+    alignSelf: 'flex-start',
+  },
   image: {
     width: 120,
     height: 120,
     borderRadius: 8,
     marginVertical: 6,
-    alignSelf: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalImageContainer: {
-    flex: 1,
-    width: '100%',
-  },
-  modalImage: {
-    width: '90%',
-    height: '70%',
-    resizeMode: 'contain',
-    borderRadius: 12,
     alignSelf: 'center',
   },
 });

@@ -1,20 +1,22 @@
 // Shows reactions below a message.
 import React from 'react';
 import PropTypes from 'prop-types';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
-const ReactionRow = ({ reactions }) => {
+const ReactionRow = React.memo(({ reactions, onPress }) => {
   if (!reactions || reactions.length === 0) return null;
   return (
-    <View style={styles.row}>
-      {reactions.map((r, idx) => (
-        <View key={r.uuid || idx} style={styles.bubble}>
-          <Text style={styles.emoji}>{typeof r === 'object' ? r.value : r}</Text>
-        </View>
-      ))}
-    </View>
+    <TouchableOpacity onPress={() => onPress && onPress(reactions)} activeOpacity={0.7}>
+      <View style={styles.row}>
+        {reactions.map((r, idx) => (
+          <View key={r.uuid || idx} style={styles.bubble}>
+            <Text style={styles.emoji}>{typeof r === 'object' ? r.value : r}</Text>
+          </View>
+        ))}
+      </View>
+    </TouchableOpacity>
   );
-};
+});
 
 ReactionRow.propTypes = {
   reactions: PropTypes.arrayOf(
@@ -27,6 +29,7 @@ ReactionRow.propTypes = {
       PropTypes.number,
     ])
   ),
+  onPress: PropTypes.func,
 };
 
 const styles = StyleSheet.create({
