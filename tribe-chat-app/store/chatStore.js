@@ -1,4 +1,12 @@
-// Helper to insert date separators into messages
+/**
+ * Inserts date separator objects into a list of messages whenever the calendar day changes.
+ * 
+ * For each message, determines its date from `createdAt`, `timestamp`, or `time`. When a new date is encountered, a separator object with type `'date-separator'` and a localized date label is inserted before the message. Separator IDs are randomized if `randomizeId` is true.
+ * 
+ * @param {Array} messages - The array of message objects to process.
+ * @param {boolean} [randomizeId=false] - Whether to randomize the separator IDs.
+ * @return {Array} The array of messages with date separators inserted.
+ */
 function insertDateSeparators(messages, randomizeId = false) {
   const withSeparators = [];
   let lastDate = null;
@@ -34,7 +42,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchMessages, fetchLatestMessages, fetchOlderMessages } from '../utils/api';
 import { fetchParticipants } from '../utils/api';
 
-// Helper to enrich messages with participant info
+/**
+ * Attaches participant information to each message based on matching participant identifiers.
+ * 
+ * For each message, finds the corresponding participant using various possible identifier fields and adds a `participant` object to the message. If the participant lacks an avatar URL, a default avatar is generated from their name.
+ * 
+ * @param {Array} messages - The array of message objects to enrich.
+ * @param {Array} participants - The array of participant objects to match against.
+ * @return {Array} A new array of messages, each with an added `participant` property.
+ */
 function enrichMessagesWithParticipants(messages, participants) {
   const participantMap = {};
   participants.forEach(p => {
