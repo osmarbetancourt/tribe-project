@@ -12,12 +12,6 @@
 - **Reduce re-rendering of components as much as possible**  
   Priority: Medium  
   Effort: Medium
-- **Show bottom sheet with list of reactions and participant names when clicking a message’s reactions**  
-  Priority: Medium  
-  Effort: Medium
-- **Show bottom sheet with participant details when clicking on a participant’s name**  
-  Priority: Medium  
-  Effort: Medium
 - **Support @mentions to mention participants**  
   Priority: Low  
   Effort: Medium
@@ -39,6 +33,14 @@
   Priority: Medium  
   Effort: Done
 - **Efficient API hydration:**  
+  Status: Implemented  
+  Priority: Medium  
+  Effort: Done
+- **Show bottom sheet with participant details when clicking on a participant’s name**  
+  Status: Implemented  
+  Priority: Medium  
+  Effort: Done
+- **Show bottom sheet with list of reactions and participant names when clicking a message’s reactions**  
   Status: Implemented  
   Priority: Medium  
   Effort: Done

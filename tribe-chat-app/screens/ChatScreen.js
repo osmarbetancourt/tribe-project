@@ -12,10 +12,10 @@ import {
   Modal,
   TouchableOpacity
 } from 'react-native';
+import Avatar from '../components/Avatar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MessageItem from '../components/MessageItem';
 import MessageInputBar from '../components/MessageInputBar';
-import Avatar from '../components/Avatar';
 import DateSeparator from '../components/DateSeparator';
 import useChatStore from '../store/chatStore';
 
@@ -25,7 +25,7 @@ const PADDING_AFTER_KEYBOARD_CLOSE = 4;  // Minimal gap after keyboard closes (a
 const ChatScreen = () => {
   const [hasScrolledInitially, setHasScrolledInitially] = useState(false);
   const [firstVisibleUuid, setFirstVisibleUuid] = useState(null);
-  const { messages, fetchAndSetMessages, loadOlderMessages } = useChatStore();
+  const { messages, fetchAndSetMessages, loadOlderMessages, participants } = useChatStore();
   const flatListRef = React.useRef(null);
   const insets = useSafeAreaInsets();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -33,6 +33,9 @@ const ChatScreen = () => {
   // State for participant sheet
   const [selectedParticipant, setSelectedParticipant] = useState(null);
   const [showParticipantSheet, setShowParticipantSheet] = useState(false);
+  // State for reactions sheet
+  const [selectedReactions, setSelectedReactions] = useState([]);
+  const [showReactionsSheet, setShowReactionsSheet] = useState(false);
 
   useEffect(() => {
     fetchAndSetMessages();
@@ -116,6 +119,19 @@ const ChatScreen = () => {
                         setSelectedParticipant(participant);
                         setShowParticipantSheet(true);
                       }}
+                      onReactionsPress={reactions => {
+                        // Enrich reactions with participant names
+                        const enriched = reactions.map(r => {
+                          let name = r.participantName;
+                          if (!name && r.participantUuid) {
+                            const found = participants.find(p => p.uuid === r.participantUuid);
+                            if (found) name = found.name;
+                          }
+                          return { ...r, participantName: name };
+                        });
+                        setSelectedReactions(enriched);
+                        setShowReactionsSheet(true);
+                      }}
                     />
                   );
                 }}
@@ -169,6 +185,36 @@ const ChatScreen = () => {
                   </>
                 )}
                 <TouchableOpacity onPress={() => setShowParticipantSheet(false)}>
+                  <Text style={{ color: '#007AFF', marginTop: 16, textAlign: 'center' }}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+          {/* Reactions details bottom sheet/modal */}
+          <Modal
+            visible={showReactionsSheet}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={() => setShowReactionsSheet(false)}
+          >
+            <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+              <View style={{ backgroundColor: '#fff', padding: 24, borderTopLeftRadius: 16, borderTopRightRadius: 16 }}>
+                <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12, textAlign: 'center' }}>Reactions</Text>
+                {selectedReactions && selectedReactions.length > 0 ? (
+                  selectedReactions.map((r, idx) => (
+                    <View key={r.uuid || idx} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                      <Text style={{ fontSize: 20, marginRight: 8 }}>{typeof r === 'object' ? r.value : r}</Text>
+                      {r.participantName ? (
+                        <Text style={{ color: '#888', fontSize: 15 }}>by {r.participantName}</Text>
+                      ) : (
+                        <Text style={{ color: '#888', fontSize: 15 }}>by Unknown</Text>
+                      )}
+                    </View>
+                  ))
+                ) : (
+                  <Text style={{ color: '#888', textAlign: 'center' }}>No reactions</Text>
+                )}
+                <TouchableOpacity onPress={() => setShowReactionsSheet(false)}>
                   <Text style={{ color: '#007AFF', marginTop: 16, textAlign: 'center' }}>Close</Text>
                 </TouchableOpacity>
               </View>

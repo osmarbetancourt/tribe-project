@@ -1,4 +1,3 @@
-// ...existing code...
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import Avatar from './Avatar';
@@ -59,7 +58,7 @@ function isMessageEdited(message) {
   return (!isNaN(sentAt) && !isNaN(updatedAt) && updatedAt > sentAt);
 }
 
-const MessageItem = ({ message, showHeader = true, reducedMargin = false, onParticipantPress }) => {
+const MessageItem = ({ message, showHeader = true, reducedMargin = false, onParticipantPress, onReactionsPress }) => {
   const [modalVisible, setModalVisible] = useState(false);
 
   const { name, avatar, isYou } = extractParticipantInfo(message);
@@ -101,9 +100,9 @@ const MessageItem = ({ message, showHeader = true, reducedMargin = false, onPart
             animationType="fade"
             onRequestClose={() => setModalVisible(false)}
           >
-            <View style={styles.modalOverlay}>
-              <TouchableOpacity style={styles.modalImageContainer} onPress={() => setModalVisible(false)}>
-                <Image source={{ uri: image }} style={styles.modalImage} />
+            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center' }}>
+              <TouchableOpacity style={{ flex: 1, width: '100%' }} onPress={() => setModalVisible(false)}>
+                <Image source={{ uri: image }} style={{ width: '90%', height: '70%', resizeMode: 'contain', borderRadius: 12, alignSelf: 'center' }} />
               </TouchableOpacity>
             </View>
           </Modal>
@@ -111,7 +110,7 @@ const MessageItem = ({ message, showHeader = true, reducedMargin = false, onPart
       )}
       {reactions && reactions.length > 0 && (
         <View style={{ minHeight: 32, marginTop: 4, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
-          <ReactionRow reactions={reactions} />
+          <ReactionRow reactions={reactions} onPress={onReactionsPress} />
         </View>
       )}
       {/* Show edited indicator at the bottom if edited */}
@@ -181,23 +180,6 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 8,
     marginVertical: 6,
-    alignSelf: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalImageContainer: {
-    flex: 1,
-    width: '100%',
-  },
-  modalImage: {
-    width: '90%',
-    height: '70%',
-    resizeMode: 'contain',
-    borderRadius: 12,
     alignSelf: 'center',
   },
 });
