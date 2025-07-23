@@ -16,7 +16,7 @@ const useChatStore = create(
       fetchAndSetMessages: async () => {
         try {
           const [messages, participants] = await Promise.all([
-            fetchMessages(),
+            fetchLatestMessages(),
             fetchParticipants(),
           ]);
           // Join participant info into each message
@@ -36,7 +36,30 @@ const useChatStore = create(
               participant,
             };
           });
-          set({ messages: enrichedMessages, participants });
+          // Insert date separators
+          const withSeparators = [];
+          let lastDate = null;
+          enrichedMessages.forEach(msg => {
+            const msgDate = new Date(msg.createdAt || msg.timestamp || msg.time);
+            if (isNaN(msgDate.getTime())) {
+              withSeparators.push(msg);
+              return;
+            }
+            // Use YYYY-MM-DD string for comparison
+            const year = msgDate.getFullYear();
+            const month = String(msgDate.getMonth() + 1).padStart(2, '0');
+            const day = String(msgDate.getDate()).padStart(2, '0');
+            const dayString = `${year}-${month}-${day}`;
+            const label = msgDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+            console.log('Comparing message dates:', { lastDate, current: dayString, label, createdAt: msg.createdAt, text: msg.text });
+            if (lastDate !== dayString) {
+              console.log('Inserting date separator:', label, 'between messages', lastDate, 'and', dayString);
+              withSeparators.push({ type: 'date-separator', date: label, id: `date-${dayString}` });
+              lastDate = dayString;
+            }
+            withSeparators.push(msg);
+          });
+          set({ messages: withSeparators, participants });
         } catch (err) {
           // Silent fail
         }
@@ -45,8 +68,10 @@ const useChatStore = create(
       loadOlderMessages: async () => {
         const currentMessages = get().messages;
         if (!currentMessages || currentMessages.length === 0) return;
-        const oldest = currentMessages[0];
-        const refUuid = oldest.id || oldest.uuid;
+        // Find the first real message (skip separators)
+        const oldest = currentMessages.find(m => !m.type);
+        const refUuid = oldest && (oldest.id || oldest.uuid);
+        if (!refUuid) return;
         try {
           const olderMessages = await fetchOlderMessages(refUuid);
           const participants = get().participants;
@@ -66,8 +91,33 @@ const useChatStore = create(
               participant,
             };
           });
-          // Prepend older messages
-          set({ messages: [...enrichedOlder, ...currentMessages] });
+          // Insert date separators for older messages
+          const withSeparators = [];
+          let lastDate = null;
+          enrichedOlder.forEach(msg => {
+            const msgDate = new Date(msg.createdAt || msg.timestamp || msg.time);
+            if (isNaN(msgDate.getTime())) {
+              withSeparators.push(msg);
+              return;
+            }
+            // Use YYYY-MM-DD string for comparison
+            const year = msgDate.getFullYear();
+            const month = String(msgDate.getMonth() + 1).padStart(2, '0');
+            const day = String(msgDate.getDate()).padStart(2, '0');
+            const dayString = `${year}-${month}-${day}`;
+            const label = msgDate.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+            console.log('Comparing message dates:', { lastDate, current: dayString, label, createdAt: msg.createdAt, text: msg.text });
+            if (lastDate !== dayString) {
+              console.log('Inserting date separator:', label, 'between messages', lastDate, 'and', dayString);
+              withSeparators.push({ type: 'date-separator', date: label, id: `date-${dayString}-${Math.random()}` });
+              lastDate = dayString;
+            }
+            withSeparators.push(msg);
+          });
+          // Prepend older messages, filter out duplicates
+          const currentUuids = new Set(currentMessages.map(m => m.uuid || m.id));
+          const newOlder = withSeparators.filter(m => !currentUuids.has(m.uuid || m.id));
+          set({ messages: [...newOlder, ...currentMessages] });
         } catch (err) {
           // Silent fail
         }
