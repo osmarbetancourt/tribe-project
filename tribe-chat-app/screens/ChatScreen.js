@@ -8,44 +8,19 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
-  Text
+  Text,
+  Modal,
+  TouchableOpacity
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MessageItem from '../components/MessageItem';
 import MessageInputBar from '../components/MessageInputBar';
-// DateSeparator component for rendering date separators in chat
-
-
-const DateSeparator = ({ date }) => (
-  <View style={[separatorStyles.separatorContainer, { marginTop: 16 }]}> {/* Add top margin for clarity */}
-    <View style={separatorStyles.separatorLine} />
-    <Text style={separatorStyles.separatorText}>{date}</Text>
-    <View style={separatorStyles.separatorLine} />
-  </View>
-);
-
-const separatorStyles = StyleSheet.create({
-  separatorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 8,
-  },
-  separatorLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#ccc',
-    marginHorizontal: 8,
-  },
-  separatorText: {
-    color: '#888',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-});
+import Avatar from '../components/Avatar';
+import DateSeparator from '../components/DateSeparator';
 import useChatStore from '../store/chatStore';
 
-const INITIAL_PADDING = 24; // Padding before keyboard is ever opened
-const SMALL_PADDING = 4;    // Minimal gap after keyboard closes (adjust if needed)
+const PADDING_BEFORE_KEYBOARD_OPEN = 24; // Padding before keyboard is ever opened
+const PADDING_AFTER_KEYBOARD_CLOSE = 4;  // Minimal gap after keyboard closes (adjust if needed)
 
 const ChatScreen = () => {
   const [hasScrolledInitially, setHasScrolledInitially] = useState(false);
@@ -55,6 +30,9 @@ const ChatScreen = () => {
   const insets = useSafeAreaInsets();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [hasOpenedKeyboard, setHasOpenedKeyboard] = useState(false);
+  // State for participant sheet
+  const [selectedParticipant, setSelectedParticipant] = useState(null);
+  const [showParticipantSheet, setShowParticipantSheet] = useState(false);
 
   useEffect(() => {
     fetchAndSetMessages();
@@ -79,10 +57,14 @@ const ChatScreen = () => {
   } else if (keyboardVisible) {
     bottomPadding = 0;
   } else if (!hasOpenedKeyboard) {
-    bottomPadding = INITIAL_PADDING;
+    bottomPadding = PADDING_BEFORE_KEYBOARD_OPEN;
   } else {
-    bottomPadding = SMALL_PADDING;
+    bottomPadding = PADDING_AFTER_KEYBOARD_CLOSE;
   }
+
+  // Ref to track scroll retry count for FlatList
+  const scrollRetryCountRef = React.useRef(0);
+  const MAX_SCROLL_RETRIES = 3;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -98,12 +80,22 @@ const ChatScreen = () => {
             ) : (
               <FlatList
                 onScrollToIndexFailed={({ index, highestMeasuredFrameIndex, averageItemLength }) => {
-                  // Retry scrolling after a short delay
-                  setTimeout(() => {
-                    if (flatListRef.current) {
-                      flatListRef.current.scrollToIndex({ index, animated: false });
-                    }
-                  }, 100);
+                  // Retry scrolling after a short delay, with bounds and retry limit
+                  if (
+                    typeof index === 'number' &&
+                    index >= 0 &&
+                    index < messages.length &&
+                    scrollRetryCountRef.current < MAX_SCROLL_RETRIES
+                  ) {
+                    scrollRetryCountRef.current += 1;
+                    setTimeout(() => {
+                      if (flatListRef.current) {
+                        flatListRef.current.scrollToIndex({ index, animated: false });
+                      }
+                    }, 100);
+                  } else {
+                    scrollRetryCountRef.current = 0; // Reset after giving up
+                  }
                 }}
                 ref={flatListRef}
                 data={messages}
@@ -117,7 +109,15 @@ const ChatScreen = () => {
                     // Don't render separator before the first message
                     return null;
                   }
-                  return <MessageItem message={item} />;
+                  return (
+                    <MessageItem
+                      message={item}
+                      onParticipantPress={participant => {
+                        setSelectedParticipant(participant);
+                        setShowParticipantSheet(true);
+                      }}
+                    />
+                  );
                 }}
                 style={styles.list}
                 contentContainerStyle={{ paddingBottom: 8 }}
@@ -150,6 +150,30 @@ const ChatScreen = () => {
               />
             )}
           </View>
+          {/* Participant details bottom sheet/modal */}
+          <Modal
+            visible={showParticipantSheet}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={() => setShowParticipantSheet(false)}
+          >
+            <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+              <View style={{ backgroundColor: '#fff', padding: 24, borderTopLeftRadius: 16, borderTopRightRadius: 16 }}>
+                {selectedParticipant && (
+                  <>
+                    <View style={{ alignItems: 'center', marginBottom: 16 }}>
+                      <Avatar uri={selectedParticipant.avatar} name={selectedParticipant.name} />
+                      <Text style={{ fontWeight: 'bold', fontSize: 18, marginTop: 8 }}>{selectedParticipant.name}</Text>
+                    </View>
+                    {/* Add more participant details here if available */}
+                  </>
+                )}
+                <TouchableOpacity onPress={() => setShowParticipantSheet(false)}>
+                  <Text style={{ color: '#007AFF', marginTop: 16, textAlign: 'center' }}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
           <View style={[
             styles.inputBarWrapper,
             { paddingBottom: bottomPadding }

@@ -3,6 +3,12 @@ node_modules/
 
 # Expo
 .expo/
+.expo-shared/
 
 # Private development log
 BITACORA.md
+
+# OS and editor artifacts
+.DS_Store
+Thumbs.db
+.vscode/

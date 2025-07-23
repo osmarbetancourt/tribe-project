@@ -7,13 +7,35 @@ export async function fetchMessages() {
 }
 
 export async function fetchLatestMessages() {
-  const res = await fetch(`${API_BASE}/messages/latest`);
-  return res.json();
+  try {
+    const res = await fetch(`${API_BASE}/messages/latest`);
+    if (!res.ok) {
+      throw new Error(`Failed to fetch latest messages: ${res.status} ${res.statusText}`);
+    }
+    return res.json();
+  } catch (err) {
+    throw new Error(`Network error in fetchLatestMessages: ${err.message || err}`);
+  }
 }
 
 export async function fetchOlderMessages(refMessageUuid) {
-  const res = await fetch(`${API_BASE}/messages/older/${refMessageUuid}`);
-  return res.json();
+  // Validate refMessageUuid: must be a non-empty string and match UUID format
+  if (
+    typeof refMessageUuid !== 'string' ||
+    !refMessageUuid.trim() ||
+    !/^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/.test(refMessageUuid.trim())
+  ) {
+    throw new Error('Invalid refMessageUuid provided to fetchOlderMessages');
+  }
+  try {
+    const res = await fetch(`${API_BASE}/messages/older/${refMessageUuid}`);
+    if (!res.ok) {
+      throw new Error(`Failed to fetch older messages: ${res.status} ${res.statusText}`);
+    }
+    return res.json();
+  } catch (err) {
+    throw new Error(`Network error in fetchOlderMessages: ${err.message || err}`);
+  }
 }
 
 export async function fetchParticipants() {

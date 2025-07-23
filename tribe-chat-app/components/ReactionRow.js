@@ -1,5 +1,6 @@
 // Shows reactions below a message.
 import React from 'react';
+import PropTypes from 'prop-types';
 import { View, Text, StyleSheet } from 'react-native';
 
 const ReactionRow = ({ reactions }) => {
@@ -13,6 +14,19 @@ const ReactionRow = ({ reactions }) => {
       ))}
     </View>
   );
+};
+
+ReactionRow.propTypes = {
+  reactions: PropTypes.arrayOf(
+    PropTypes.oneOfType([
+      PropTypes.shape({
+        value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+        uuid: PropTypes.string,
+      }),
+      PropTypes.string,
+      PropTypes.number,
+    ])
+  ),
 };
 
 const styles = StyleSheet.create({
