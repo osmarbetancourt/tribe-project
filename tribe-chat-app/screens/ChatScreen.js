@@ -115,6 +115,7 @@ const ChatScreen = () => {
                   return (
                     <MessageItem
                       message={item}
+                      participants={participants}
                       onParticipantPress={participant => {
                         setSelectedParticipant(participant);
                         setShowParticipantSheet(true);

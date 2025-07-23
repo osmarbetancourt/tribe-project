@@ -58,7 +58,7 @@ function isMessageEdited(message) {
   return (!isNaN(sentAt) && !isNaN(updatedAt) && updatedAt > sentAt);
 }
 
-const MessageItem = ({ message, showHeader = true, reducedMargin = false, onParticipantPress, onReactionsPress }) => {
+const MessageItem = React.memo(({ message, showHeader = true, reducedMargin = false, onParticipantPress, onReactionsPress, participants }) => {
   const [modalVisible, setModalVisible] = useState(false);
 
   const { name, avatar, isYou } = extractParticipantInfo(message);
@@ -67,6 +67,22 @@ const MessageItem = ({ message, showHeader = true, reducedMargin = false, onPart
   const reactions = message.reactions || message.reaction || [];
   const { image, imageWidth, imageHeight } = extractImageInfo(message);
   const edited = isMessageEdited(message);
+
+  // Quoted message logic
+  const quoted = message.replyToMessage;
+  let quotedAuthor = 'Unknown';
+  if (quoted) {
+    if (quoted.participant?.name) {
+      quotedAuthor = quoted.participant.name;
+    } else if (quoted.authorUuid === 'you') {
+      quotedAuthor = 'You';
+    } else if (participants && Array.isArray(participants)) {
+      const found = participants.find(p => p.uuid === quoted.authorUuid);
+      if (found && found.name) quotedAuthor = found.name;
+    }
+  }
+  let quotedText = quoted ? extractTextContent(quoted) : null;
+  let quotedImageInfo = quoted ? extractImageInfo(quoted) : {};
 
   const containerStyle = [
     styles.container,
@@ -88,6 +104,16 @@ const MessageItem = ({ message, showHeader = true, reducedMargin = false, onPart
       ) : null}
       {/* Always show time below header */}
       <Text style={styles.time}>{time}</Text>
+      {/* Quoted message box */}
+      {quoted && (
+        <View style={styles.quotedBox}>
+          <Text style={styles.quotedAuthor}>{quotedAuthor}</Text>
+          <Text style={styles.quotedText}>{quotedText}</Text>
+          {quotedImageInfo.image && (
+            <Image source={{ uri: quotedImageInfo.image }} style={[styles.quotedImage, { width: quotedImageInfo.imageWidth || 80, height: quotedImageInfo.imageHeight || 80 }]} />
+          )}
+        </View>
+      )}
       <Text style={styles.text}>{text}</Text>
       {image && (
         <>
@@ -117,7 +143,7 @@ const MessageItem = ({ message, showHeader = true, reducedMargin = false, onPart
       {edited && <Text style={styles.edited}>(edited)</Text>}
     </View>
   );
-};
+});
 const styles = StyleSheet.create({
   container: {
     borderRadius: 8,
@@ -174,6 +200,33 @@ const styles = StyleSheet.create({
     marginBottom: 12, // More space below text for reactions
     flexWrap: 'wrap',
     wordBreak: 'break-word',
+  },
+  quotedBox: {
+    borderLeftWidth: 3,
+    borderLeftColor: '#007AFF',
+    backgroundColor: '#f0f4fa',
+    padding: 8,
+    marginBottom: 8,
+    marginTop: 2,
+    borderRadius: 6,
+  },
+  quotedAuthor: {
+    fontWeight: 'bold',
+    color: '#007AFF',
+    fontSize: 13,
+    marginBottom: 2,
+  },
+  quotedText: {
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 4,
+  },
+  quotedImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 6,
+    marginTop: 4,
+    alignSelf: 'flex-start',
   },
   image: {
     width: 120,

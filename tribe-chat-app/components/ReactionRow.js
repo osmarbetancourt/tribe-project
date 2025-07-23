@@ -3,7 +3,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
-const ReactionRow = ({ reactions, onPress }) => {
+const ReactionRow = React.memo(({ reactions, onPress }) => {
   if (!reactions || reactions.length === 0) return null;
   return (
     <TouchableOpacity onPress={() => onPress && onPress(reactions)} activeOpacity={0.7}>
@@ -16,7 +16,7 @@ const ReactionRow = ({ reactions, onPress }) => {
       </View>
     </TouchableOpacity>
   );
-};
+});
 
 ReactionRow.propTypes = {
   reactions: PropTypes.arrayOf(
