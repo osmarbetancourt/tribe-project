@@ -1,0 +1,8 @@
+# Node modules
+node_modules/
+
+# Expo
+.expo/
+
+# Private development log
+BITACORA.md

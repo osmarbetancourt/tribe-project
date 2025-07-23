@@ -1,29 +1,3 @@
-// Renders a single message in the chat.
-import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
-import Avatar from './Avatar';
-import ReactionRow from './ReactionRow';
-
-const MessageItem = ({ message }) => {
-  return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Avatar uri={message.participant.avatar} />
-        <View style={styles.headerText}>
-          <Text style={styles.name}>{message.participant.name}</Text>
-          <Text style={styles.time}>{message.time}</Text>
-        </View>
-        {message.edited && <Text style={styles.edited}>(edited)</Text>}
-      </View>
-      <Text style={styles.text}>{message.text}</Text>
-      {message.image && (
-        <Image source={{ uri: message.image }} style={styles.image} />
-      )}
-      <ReactionRow reactions={message.reactions} />
-    </View>
-  );
-};
-
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#fff',
@@ -68,5 +42,45 @@ const styles = StyleSheet.create({
     marginVertical: 6,
   },
 });
+import React from 'react';
+import { View, Text, Image, StyleSheet } from 'react-native';
+import Avatar from './Avatar';
+import ReactionRow from './ReactionRow';
+
+// Renders a single message in the chat.
+const MessageItem = ({ message }) => {
+
+  // Fallbacks for API data
+  const name = message.participant?.name || message.sender?.name || message.senderName || 'Unknown';
+  const avatar = message.participant?.avatar || message.sender?.avatar || message.avatar || undefined;
+  const time = message.time || message.createdAt || message.timestamp || '';
+  // If text is an object or array, stringify it for safe rendering
+  let text = message.text || message.content || '';
+  if (typeof text === 'object') {
+    text = JSON.stringify(text);
+  }
+  const reactions = message.reactions || message.reaction || [];
+  const image = message.image || message.imageUrl || undefined;
+  const edited = message.edited || message.isEdited || false;
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Avatar uri={avatar} />
+        <View style={styles.headerText}>
+          <Text style={styles.name}>{name}</Text>
+          <Text style={styles.time}>{time}</Text>
+        </View>
+        {edited && <Text style={styles.edited}>(edited)</Text>}
+      </View>
+      <Text style={styles.text}>{text}</Text>
+      {image && (
+        <Image source={{ uri: image }} style={styles.image} />
+      )}
+      <ReactionRow reactions={reactions} />
+    </View>
+  );
+};
 
 export default MessageItem;
+

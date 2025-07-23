@@ -7,8 +7,8 @@ const ReactionRow = ({ reactions }) => {
   return (
     <View style={styles.row}>
       {reactions.map((r, idx) => (
-        <View key={idx} style={styles.bubble}>
-          <Text style={styles.emoji}>{r}</Text>
+        <View key={r.uuid || idx} style={styles.bubble}>
+          <Text style={styles.emoji}>{typeof r === 'object' ? r.value : r}</Text>
         </View>
       ))}
     </View>
