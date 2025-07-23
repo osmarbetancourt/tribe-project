@@ -6,6 +6,16 @@ export async function fetchMessages() {
   return res.json();
 }
 
+export async function fetchLatestMessages() {
+  const res = await fetch(`${API_BASE}/messages/latest`);
+  return res.json();
+}
+
+export async function fetchOlderMessages(refMessageUuid) {
+  const res = await fetch(`${API_BASE}/messages/older/${refMessageUuid}`);
+  return res.json();
+}
+
 export async function fetchParticipants() {
   const res = await fetch(`${API_BASE}/participants/all`);
   return res.json();
