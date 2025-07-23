@@ -3,7 +3,11 @@ import { View, Text, Image, StyleSheet, Modal, TouchableOpacity } from 'react-na
 import Avatar from './Avatar';
 import ReactionRow from './ReactionRow';
 
-// Helper to extract participant info
+/**
+ * Extracts the participant's name, avatar URL, and a flag indicating if the participant is the current user from a message object.
+ * @param {Object} message - The message object containing participant information.
+ * @return {Object} An object with `name`, `avatar`, and `isYou` properties.
+ */
 function extractParticipantInfo(message) {
   return {
     name: message.participant?.name || 'Unknown',
@@ -12,7 +16,11 @@ function extractParticipantInfo(message) {
   };
 }
 
-// Helper to extract and format timestamp
+/**
+ * Extracts and formats the timestamp from a message object.
+ * @param {Object} message - The message object containing possible timestamp fields.
+ * @return {string} The localized time string if a valid timestamp is found, the raw value as a string if invalid, or an empty string if no timestamp exists.
+ */
 function extractTimestamp(message) {
   let rawTime = message.sentAt || message.time || message.createdAt || message.timestamp || '';
   if (rawTime) {
@@ -26,7 +34,12 @@ function extractTimestamp(message) {
   return '';
 }
 
-// Helper to extract text content
+/**
+ * Extracts the text content from a message object.
+ * If the text content is an object, returns its JSON string representation.
+ * @param {Object} message - The message object containing text or content fields.
+ * @return {string} The extracted text content as a string.
+ */
 function extractTextContent(message) {
   let text = message.text || message.content || '';
   if (typeof text === 'object') {
@@ -35,7 +48,11 @@ function extractTextContent(message) {
   return text;
 }
 
-// Helper to extract image info
+/**
+ * Extracts image URL and dimensions from a message object.
+ * @param {object} message - The message object containing possible image data.
+ * @return {{image: string|undefined, imageWidth: number, imageHeight: number}} An object with the image URL (if found), width, and height.
+ */
 function extractImageInfo(message) {
   let image = message.image || message.imageUrl || undefined;
   let imageWidth = 120;
@@ -51,7 +68,11 @@ function extractImageInfo(message) {
   return { image, imageWidth, imageHeight };
 }
 
-// Helper to check if message is edited
+/**
+ * Determines whether a message has been edited by comparing its sent and updated timestamps.
+ * @param {Object} message - The message object containing `sentAt` and `updatedAt` fields.
+ * @return {boolean} True if the message was edited after being sent; otherwise, false.
+ */
 function isMessageEdited(message) {
   const sentAt = Number(message.sentAt);
   const updatedAt = Number(message.updatedAt);
