@@ -1,49 +1,90 @@
-# Tribe Take-Home Exercise Instructions
 
-## Overview
-This exercise is for candidates applying to Tribe Chat. You are required to build a React Native chat application using Expo, following the requirements and guidelines below.
+# Tribe Take-Home Exercise
 
-## Must Haves
-- Use Expo to bootstrap the project.
-- Use Zustand for state management.
-- Use AsyncStorage for data persistence.
-- Integrate with the provided mock chat server API.
-- Implement core chat features:
-  - Send and receive messages
-  - Display user list
-  - Basic chat UI
+## Aim
+To create a cross-platform React Native single room chat app.
 
-## Good to Have
-- Typing indicators
-- Message status (delivered/read)
-- User presence
-- Push notifications
-- Any other enhancements that improve UX or performance
+## Instructions
+- Use Expo to set up a new project.
+- Use Zustand along with async-storage for persistent data storage.
+- **Do not use react-native-gifted-chat or any similar package to render the chat view.**
+- You may use any other package as per your preference/convenience.
 
-## Evaluation Criteria
-- Code quality and organization
-- User experience and interface
-- Performance and responsiveness
-- Documentation and clarity
-- Use of best practices
+## Must haves (Required)
+- The app should consist of a screen with the list of all the messages.
+- Each message should have a header with the avatar and name of the participant and the time at which the message was sent.
+- Edited messages should indicate that they were edited.
+- Each message having reactions should show a row of reactions below it.
+- Consecutive messages of the same participant should be grouped together.
+- There should be an input bar at the bottom of the screen for sending new messages.
+- Show image for the messages which have an image attachment.
 
-## References & Resources
-- [Expo Tutorial](https://docs.expo.dev/tutorial/create-your-first-app/)
-- [Zustand Demo](https://zustand-demo.pmnd.rs/)
-- [AsyncStorage GitHub](https://github.com/react-native-async-storage/async-storage)
-- [Gifted Chat NPM](https://www.npmjs.com/package/react-native-gifted-chat/v/0.9.0-beta.2)
-- [Dummy Chat Server TypeScript](https://github.com/ryushar/dummy-chat-server/blob/main/src/global.d.ts)
-- [Mock Chat Server API](https://dummy-chat-server.tribechat.com/api)
+## Good to have (Optional)
+- Show a separator (date) in between messages sent on different days.
+- A message sent as reply to another message should show the quoted original message (message.replyToMessage).
+- Efficiently use the API endpoints to initially hydrate the app and keep it up to date with the latest data throughout the app session.
+- Lazy loading of messages / infinite scroll upwards.
+- Storing the fetched data locally for offline app access.
+- Reduce the re-rendering of the components as much as possible.
+- Clicking on a message’s reactions should show a bottom sheet with the list of reactions along with the name of the participant who added it.
+- Clicking on the name of a participant should open up a bottom sheet with the details of the participant.
+- Clicking on a message’s image should open up an image preview overlay / modal.
+- @mentions to mention participants.
 
-## Contacts
-- raj@tribechat.com
-- kahseng@tribechat.com
-- tushar@tribechat.com
-- dev-hiring@tribechat.com
+## Mock chat server API
+This server mocks a single room chat with messages and participants being added and updated all the time.
+
+Latest API Version: 1
+
+Type definitions:
+https://github.com/ryushar/dummy-chat-server/blob/main/src/global.d.ts
+
+Endpoint base:
+https://dummy-chat-server.tribechat.com/api
+
+### Endpoints
+- `GET  /info` → `{ sessionUuid: string; apiVersion: number }`
+  - Returns the server’s session uuid and the api version
+  - session uuid: reset/clear the local data stored in the frontend (e.g., messages, participants) whenever this changes.
+  - api version: the current server API version.
+
+- `GET  /messages/all` → `TMessageJSON[]`
+  - Returns all of the messages
+
+- `GET  /messages/latest` → `TMessageJSON[]`
+  - Returns the latest 25 messages
+
+- `GET  /messages/older/<ref-message-uuid>` → `TMessageJSON[]`
+  - ref-message-uuid: uuid of the reference message
+  - Returns the latest 25 messages sent before the reference message
+
+- `GET  /messages/updates/<time>` → `TMessageJSON[]`
+  - time: milliseconds elapsed since epoch (as returned by Date.now())
+  - Returns all the messages which were updated after the provided time
+
+- `POST /messages/new` → `TMessageJSON`
+  - Request body JSON format: `{ text: string }`
+  - Adds a new message and returns it
+
+- `GET /participants/all` → `TParticipant[]`
+  - Returns all of the chat participants
+
+- `GET /participants/updates/<time>` → `TParticipant[]`
+  - time: milliseconds elapsed since epoch (as returned by Date.now())
+  - Returns all the chat participants which were updated after the provided time
+
+### Misc info
+- Your own participant’s uuid is “you”.
 
 ## Submission
-- Follow the instructions and submit your solution as requested in the original exercise.
-- Ensure your code is well-documented and easy to review.
+- Complete this assignment within 5 days of receiving it.
+- Leveraging AI tools is fine, but explain in detail what parts relied on which AI tools. Our expectations for you are just higher the more you rely on AI to accomplish the tasks required. Conversely, if you’re able to not rely on AI tools, we will be more impressed.
+- Send the link to the private GitHub repository to raj@tribechat.com, kahseng@tribechat.com and tushar@tribechat.com (Please do not forget to provide the aforementioned emails with the access to the repository)
 
----
-For any questions, reach out to the contacts above.
+## Evaluation Criteria
+- Functionality and robustness
+- Code quality (Clarity, Readability, Best practices, Efficiency, etc.)
+- Code maintenance through the course of development on Version Control System (commits etc.)
+- Quality of UI
+
+Write back to us on dev-hiring@tribechat.com in case of any questions/clarifications.

@@ -1,0 +1,39 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "Start Expo Dev Server",
+			"command": "npx expo start",
+			"group": "build",
+	  "isBackground": true,
+	  "problemMatcher": [
+		{
+		  "owner": "expo",
+		  "pattern": [
+			{
+			  "regexp": ".*Starting project.*",
+			  "file": 1,
+			  "line": 1,
+			  "column": 1,
+			  "message": 0
+			},
+			{
+			  "regexp": ".*Tunnel ready.*|.*Metro waiting on.*|.*Metro Bundler ready.*",
+			  "file": 1,
+			  "line": 1,
+			  "column": 1,
+			  "message": 0
+			}
+		  ],
+		  "background": {
+			"activeOnStart": true,
+			"beginsPattern": ".*Starting project.*",
+			"endsPattern": ".*Tunnel ready.*|.*Metro waiting on.*|.*Metro Bundler ready.*"
+		  }
+		}
+	  ],
+			"args": []
+		}
+	]
+}
