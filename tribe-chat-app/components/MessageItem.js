@@ -111,6 +111,47 @@ const MessageItem = React.memo(({ message, showHeader = true, reducedMargin = fa
     reducedMargin ? { marginVertical: 0.5 } : {},
   ];
 
+  // Helper to render message text with highlighted mentions
+  function renderTextWithMentions(text) {
+    if (!text) return null;
+    // Match both @[[name]] and @name (multi-word) formats
+    const mentionRegex = /@\[\[(.+?)\]\]|@([\w ]+)/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    while ((match = mentionRegex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(text.slice(lastIndex, match.index));
+      }
+      // If @[[name]] format
+      if (match[1]) {
+        parts.push(
+          <Text key={match.index} style={styles.mention}>
+            @{match[1]}
+          </Text>
+        );
+      } else if (match[2]) {
+        // If @name format, only highlight if matches a participant
+        const nameToCheck = match[2].trim().toLowerCase();
+        const found = Array.isArray(participants) && participants.find(p => p.name && p.name.toLowerCase() === nameToCheck);
+        if (found) {
+          parts.push(
+            <Text key={match.index} style={styles.mention}>
+              @{match[2]}
+            </Text>
+          );
+        } else {
+          parts.push(`@${match[2]}`);
+        }
+      }
+      lastIndex = mentionRegex.lastIndex;
+    }
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex));
+    }
+    return parts;
+  }
+
   return (
     <View style={containerStyle}>
       {showHeader ? (
@@ -135,7 +176,7 @@ const MessageItem = React.memo(({ message, showHeader = true, reducedMargin = fa
           )}
         </View>
       )}
-      <Text style={styles.text}>{text}</Text>
+      <Text style={styles.text}>{renderTextWithMentions(text)}</Text>
       {image && (
         <>
           <TouchableOpacity onPress={() => setModalVisible(true)}>
@@ -255,6 +296,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginVertical: 6,
     alignSelf: 'center',
+  },
+  mention: {
+    color: '#007AFF',
+    fontWeight: 'bold',
   },
 });
 

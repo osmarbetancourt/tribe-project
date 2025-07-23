@@ -63,4 +63,23 @@ export async function fetchParticipants() {
   return res.json();
 }
 
+/**
+ * Sends a new message to the server.
+ * @param {string} text - The message text to send.
+ * @returns {Promise<Object>} The created message object from the server.
+ */
+export async function sendMessage(text) {
+  const res = await fetch(`${API_BASE}/messages/new`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ text }),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to send message: ${res.status} ${res.statusText}`);
+  }
+  return res.json();
+}
+
 // Add more API functions as needed

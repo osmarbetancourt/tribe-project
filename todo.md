@@ -2,11 +2,6 @@
 
 
 ## Features to Implement
-
-- **Show quoted original message when replying (message.replyToMessage)**  
-  Status: Implemented  
-  Priority: High  
-  Effort: Done
 - **Store fetched data locally for offline app access**  
   Priority: High  
   Effort: High
@@ -45,4 +40,8 @@
 - **Reduce re-rendering of components as much as possible**  
   Status: Implemented (React.memo for key components)  
   Priority: Medium  
+  Effort: Done
+- **Show quoted original message when replying (message.replyToMessage)**  
+  Status: Implemented  
+  Priority: High  
   Effort: Done
