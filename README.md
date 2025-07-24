@@ -41,22 +41,53 @@ Manual review and adjustments were made throughout to ensure code quality and al
 - Minor UI quirks may occur on certain devices.
 - WebSocket connection would be needed for a better "real time" chat.
 
-## Sequence Example
+## Sequence Diagram(s)
+
+### Real-Time Polling and Message Update Flow
+
 ```mermaid
 sequenceDiagram
     participant User
     participant ChatScreen
-    participant MessageItem
-    participant ReactionRow
-    participant Modal
+    participant chatStore
+    participant API
 
-    User->>MessageItem: Tap on message's reactions
-    MessageItem->>ReactionRow: onPress(reactions)
-    ReactionRow->>ChatScreen: onReactionsPress(reactions)
-    ChatScreen->>ChatScreen: Enrich reactions with participant names
-    ChatScreen->>Modal: Show reactions bottom sheet with details
-    User->>Modal: Close modal
-    Modal->>ChatScreen: Hide reactions bottom sheet
+    User->>ChatScreen: Opens chat screen
+    ChatScreen->>chatStore: startPollingUpdates()
+    loop Every polling interval
+        chatStore->>API: fetchMessageUpdates(lastMessageTime)
+        API-->>chatStore: Updated messages
+        chatStore->>API: fetchParticipantUpdates(lastParticipantTime)
+        API-->>chatStore: Updated participants
+        chatStore->>chatStore: Merge updates, enrich messages
+        chatStore-->>ChatScreen: Updated state (messages, participants)
+        ChatScreen-->>User: UI updates with new messages/participants
+    end
+    User->>ChatScreen: Navigates away
+    ChatScreen->>chatStore: stopPollingUpdates()
+```
+
+### Mention Autocomplete and Message Sending
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant MessageInputBar
+    participant API
+    participant chatStore
+
+    User->>MessageInputBar: Types "@" and characters
+    MessageInputBar->>MessageInputBar: Show participant autocomplete
+    User->>MessageInputBar: Selects mention
+    MessageInputBar->>MessageInputBar: Insert mention in input
+    User->>MessageInputBar: Presses Send
+    MessageInputBar->>API: sendMessage(text)
+    API-->>MessageInputBar: Success/Error
+    alt Success
+        MessageInputBar->>chatStore: fetchAndSetMessages()
+    else Error
+        MessageInputBar->>User: Show error message
+    end
 ```
 
 ---
