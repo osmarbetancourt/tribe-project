@@ -11,6 +11,7 @@ const MessageInputBar = () => {
   const [sending, setSending] = useState(false);
   const [showMentions, setShowMentions] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
+  const [sendError, setSendError] = useState('');
 
   // Detect @mention trigger and filter participants
   React.useEffect(() => {
@@ -37,12 +38,13 @@ const MessageInputBar = () => {
   const handleSend = async () => {
     if (!input.trim() || sending) return;
     setSending(true);
+    setSendError('');
     try {
       await sendMessage(input.trim());
       setInput('');
       await fetchAndSetMessages(); // Refresh messages after sending
     } catch (err) {
-      // Optionally show error to user
+      setSendError(err.message || 'Failed to send message.');
       console.error('Send message error:', err);
     } finally {
       setSending(false);
@@ -56,9 +58,9 @@ const MessageInputBar = () => {
           data={showMentions ? filteredParticipants : []}
           value={input}
           onChangeText={setInput}
-          inputContainerStyle={[styles.input, { borderWidth: 0, backgroundColor: 'transparent', marginRight: 0 }]}
-          containerStyle={{ flex: 1, position: 'relative' }}
-          listContainerStyle={{ position: 'absolute', bottom: '100%', left: 0, right: 0, zIndex: 10, backgroundColor: '#fff', borderRadius: 8, elevation: 2, marginBottom: 2, maxHeight: 180 }}
+          inputContainerStyle={styles.inputContainer}
+          containerStyle={styles.autocompleteContainer}
+          listContainerStyle={styles.listContainer}
           flatListProps={{
             keyExtractor: item => item.uuid,
             renderItem: ({ item }) => (
@@ -72,6 +74,9 @@ const MessageInputBar = () => {
           onSubmitEditing={handleSend}
           returnKeyType="send"
         />
+        {sendError ? (
+          <Text style={styles.errorText}>{sendError}</Text>
+        ) : null}
       </View>
       <TouchableOpacity
         style={[styles.button, !input.trim() || sending ? { opacity: 0.5 } : {}]}
@@ -103,6 +108,31 @@ const styles = StyleSheet.create({
     marginRight: 8,
     backgroundColor: '#f9f9f9',
   },
+  inputContainer: {
+    flex: 1,
+    height: 40,
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+    marginRight: 0,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+  },
+  autocompleteContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  listContainer: {
+    position: 'absolute',
+    bottom: '100%',
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    elevation: 2,
+    marginBottom: 2,
+    maxHeight: 180,
+  },
   button: {
     backgroundColor: '#007AFF',
     borderRadius: 20,
@@ -122,6 +152,12 @@ const styles = StyleSheet.create({
   mentionText: {
     fontWeight: 'bold',
     color: '#007AFF',
+  },
+  errorText: {
+    color: '#e74c3c',
+    fontSize: 13,
+    marginTop: 4,
+    marginLeft: 8,
   },
 });
 

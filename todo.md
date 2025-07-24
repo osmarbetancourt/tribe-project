@@ -2,17 +2,19 @@
 
 
 ## Features to Implement
-- **Store fetched data locally for offline app access**  
-  Priority: High  
-  Effort: High
-- **Support @mentions to mention participants**  
-  Priority: Low  
-  Effort: Medium
 - **Real-time updates to keep app up to date throughout session**  
   Priority: High  
   Effort: High
 
-## Notes
+## Completed Features
+- **Store fetched data locally for offline app access**  
+  Status: Implemented  
+  Priority: High  
+  Effort: High
+- **Support @mentions to mention participants**  
+  Status: Implemented  
+  Priority: Low  
+  Effort: Medium
 - **Date separator between messages sent on different days:**  
   Status: Implemented but doesn't work  
   Priority: Medium  
