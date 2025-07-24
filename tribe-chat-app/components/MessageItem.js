@@ -111,20 +111,60 @@ const MessageItem = React.memo(({ message, showHeader = true, reducedMargin = fa
     reducedMargin ? { marginVertical: 0.5 } : {},
   ];
 
+  // Helper to render message text with highlighted mentions
+  function renderTextWithMentions(text) {
+    if (!text) return null;
+    // Match both @[[name]] and @name (multi-word) formats
+    const mentionRegex = /@\[\[(.+?)\]\]|@([\w ]+)/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    while ((match = mentionRegex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(text.slice(lastIndex, match.index));
+      }
+      // If @[[name]] format
+      if (match[1]) {
+        parts.push(
+          <Text key={match.index} style={styles.mention}>
+            @{match[1]}
+          </Text>
+        );
+      } else if (match[2]) {
+        // If @name format, only highlight if matches a participant
+        const nameToCheck = match[2].trim().toLowerCase();
+        const found = Array.isArray(participants) && participants.find(p => p.name && p.name.toLowerCase() === nameToCheck);
+        if (found) {
+          parts.push(
+            <Text key={match.index} style={styles.mention}>
+              @{match[2]}
+            </Text>
+          );
+        } else {
+          parts.push(`@${match[2]}`);
+        }
+      }
+      lastIndex = mentionRegex.lastIndex;
+    }
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex));
+    }
+    return parts;
+  }
+
   return (
     <View style={containerStyle}>
       {showHeader ? (
-        <View style={styles.header}>
+        <View style={[styles.header, isYou ? styles.headerRight : styles.headerLeft]}>
           <Avatar uri={avatar} name={name} />
           <View style={styles.headerText}> 
             <TouchableOpacity onPress={() => onParticipantPress && onParticipantPress(message.participant)}>
               <Text style={styles.name}>{name}</Text>
             </TouchableOpacity>
+            <Text style={[styles.time, isYou ? styles.timeRight : styles.timeLeft]}>{time}</Text>
           </View>
         </View>
       ) : null}
-      {/* Always show time below header */}
-      <Text style={styles.time}>{time}</Text>
       {/* Quoted message box */}
       {quoted && (
         <View style={styles.quotedBox}>
@@ -135,9 +175,9 @@ const MessageItem = React.memo(({ message, showHeader = true, reducedMargin = fa
           )}
         </View>
       )}
-      <Text style={styles.text}>{text}</Text>
+      <Text style={styles.text}>{renderTextWithMentions(text)}</Text>
       {image && (
-        <>
+        <React.Fragment>
           <TouchableOpacity onPress={() => setModalVisible(true)}>
             <Image source={{ uri: image }} style={[styles.image, { width: imageWidth, height: imageHeight }]} />
           </TouchableOpacity>
@@ -148,12 +188,23 @@ const MessageItem = React.memo(({ message, showHeader = true, reducedMargin = fa
             onRequestClose={() => setModalVisible(false)}
           >
             <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center' }}>
-              <TouchableOpacity style={{ flex: 1, width: '100%' }} onPress={() => setModalVisible(false)}>
-                <Image source={{ uri: image }} style={{ width: '90%', height: '70%', resizeMode: 'contain', borderRadius: 12, alignSelf: 'center' }} />
+              <TouchableOpacity style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center' }} onPress={() => setModalVisible(false)}>
+                <Image
+                  source={{ uri: image }}
+                  style={{
+                    width: '90%',
+                    height: undefined,
+                    aspectRatio: imageWidth / imageHeight,
+                    resizeMode: 'contain',
+                    borderRadius: 12,
+                    alignSelf: 'center',
+                    marginVertical: 16,
+                  }}
+                />
               </TouchableOpacity>
             </View>
           </Modal>
-        </>
+        </React.Fragment>
       )}
       {reactions && reactions.length > 0 && (
         <View style={{ minHeight: 32, marginTop: 4, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -167,25 +218,27 @@ const MessageItem = React.memo(({ message, showHeader = true, reducedMargin = fa
 });
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 8,
-    padding: 12,
-    marginVertical: 6,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-    maxWidth: '85%',
+    borderRadius: 24,
+    paddingVertical: 14,
+    paddingHorizontal: 22,
+    marginVertical: 4,
+    shadowColor: '#1a1a1a',
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 6,
+    maxWidth: '80%',
     flexDirection: 'column',
     alignItems: 'flex-start',
     flexShrink: 1,
-    overflow: 'hidden', // Prevent content from overflowing
+    backgroundColor: '#fff',
+    overflow: 'visible',
   },
   rightContainer: {
-    backgroundColor: '#e6f7ff', // Light blue for 'you'
+    backgroundColor: '#e3f0ff', // Soft light blue for 'you'
     alignSelf: 'flex-end',
   },
   leftContainer: {
-    backgroundColor: '#fff', // Default for others
+    backgroundColor: '#fff', // White for others
     alignSelf: 'flex-start',
   },
   header: {
@@ -205,6 +258,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 15,
     marginBottom: 2,
+    color: '#222',
   },
   time: {
     fontSize: 12,
@@ -217,10 +271,17 @@ const styles = StyleSheet.create({
     marginLeft: 0,
   },
   text: {
-    fontSize: 16,
-    marginBottom: 12, // More space below text for reactions
+    fontSize: 17,
+    fontWeight: '400',
+    color: '#222',
+    marginBottom: 10,
     flexWrap: 'wrap',
     wordBreak: 'break-word',
+    letterSpacing: 0.1,
+  },
+  // Make text white for your own messages
+  rightContainerText: {
+    color: '#fff',
   },
   quotedBox: {
     borderLeftWidth: 3,
@@ -230,6 +291,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 2,
     borderRadius: 6,
+    maxWidth: '100%',
+    alignSelf: 'stretch',
+    overflow: 'hidden',
   },
   quotedAuthor: {
     fontWeight: 'bold',
@@ -252,9 +316,16 @@ const styles = StyleSheet.create({
   image: {
     width: 120,
     height: 120,
+    maxWidth: '80%',
+    maxHeight: 160,
     borderRadius: 8,
     marginVertical: 6,
     alignSelf: 'center',
+    resizeMode: 'cover',
+  },
+  mention: {
+    color: '#007AFF',
+    fontWeight: 'bold',
   },
 });
 

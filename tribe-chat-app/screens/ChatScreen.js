@@ -25,7 +25,19 @@ const PADDING_AFTER_KEYBOARD_CLOSE = 4;  // Minimal gap after keyboard closes (a
 const ChatScreen = () => {
   const [hasScrolledInitially, setHasScrolledInitially] = useState(false);
   const [firstVisibleUuid, setFirstVisibleUuid] = useState(null);
-  const { messages, fetchAndSetMessages, loadOlderMessages, participants } = useChatStore();
+  const { messages, fetchAndSetMessages, loadOlderMessages, participants, startPollingUpdates, stopPollingUpdates } = useChatStore();
+  // Defensive sort: always sort messages by sentAt/updatedAt/time before rendering
+  const sortedMessages = React.useMemo(() => {
+    return [...messages].sort((a, b) => {
+      // Handle date-separator type (should stay in correct place)
+      if (a.type === 'date-separator' && b.type !== 'date-separator') return -1;
+      if (b.type === 'date-separator' && a.type !== 'date-separator') return 1;
+      // Use sentAt, updatedAt, or time
+      const aTime = a.sentAt || a.updatedAt || a.time || a.date || 0;
+      const bTime = b.sentAt || b.updatedAt || b.time || b.date || 0;
+      return aTime - bTime;
+    });
+  }, [messages]);
   const flatListRef = React.useRef(null);
   const insets = useSafeAreaInsets();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -38,7 +50,19 @@ const ChatScreen = () => {
   const [showReactionsSheet, setShowReactionsSheet] = useState(false);
 
   useEffect(() => {
-    fetchAndSetMessages();
+    // Try to fetch messages from API, but fallback to local data if offline
+    let didFetch = false;
+    const fetchMessagesSafe = async () => {
+      try {
+        await fetchAndSetMessages();
+        didFetch = true;
+      } catch (err) {
+        // API fetch failed, using offline data
+      }
+    };
+    fetchMessagesSafe();
+    // [ChatScreen] Calling startPollingUpdates
+    startPollingUpdates();
 
     const showSub = Keyboard.addListener('keyboardDidShow', () => {
       setKeyboardVisible(true);
@@ -50,6 +74,7 @@ const ChatScreen = () => {
     return () => {
       showSub.remove();
       hideSub.remove();
+      stopPollingUpdates();
     };
   }, []);
 
@@ -78,7 +103,7 @@ const ChatScreen = () => {
       >
         <View style={{ flex: 1 }}>
           <View style={styles.container}>
-            {messages.length === 0 ? (
+            {(messages.length === 0) ? (
               <ActivityIndicator size="large" color="#007AFF" style={{ marginTop: 32 }} />
             ) : (
               <FlatList
@@ -101,7 +126,7 @@ const ChatScreen = () => {
                   }
                 }}
                 ref={flatListRef}
-                data={messages}
+                data={sortedMessages}
                 keyExtractor={item => item.id || item.uuid || item.date}
                 renderItem={({ item, index }) => {
                   // Only show separator if not the first item
@@ -141,23 +166,23 @@ const ChatScreen = () => {
                 keyboardShouldPersistTaps="always"
                 onScroll={event => {
                   const { contentOffset } = event.nativeEvent;
-                  if (contentOffset.y <= 0 && messages.length > 0) {
+                  if (contentOffset.y <= 0 && sortedMessages.length > 0) {
                     // Track the first visible message before loading older
-                    setFirstVisibleUuid(messages[0].uuid || messages[0].id);
+                    setFirstVisibleUuid(sortedMessages[0].uuid || sortedMessages[0].id);
                     loadOlderMessages();
                   }
                 }}
                 onContentSizeChange={() => {
                   // After older messages are loaded, scroll to the previously first visible message
                   if (firstVisibleUuid && flatListRef.current) {
-                    const idx = messages.findIndex(m => (m.uuid || m.id) === firstVisibleUuid);
+                    const idx = sortedMessages.findIndex(m => (m.uuid || m.id) === firstVisibleUuid);
                     if (idx !== -1) {
                       flatListRef.current.scrollToIndex({ index: idx, animated: false });
                       setFirstVisibleUuid(null);
                     }
                   }
                   // Scroll to bottom only once after initial hydration
-                  if (!hasScrolledInitially && flatListRef.current && messages.length > 0) {
+                  if (!hasScrolledInitially && flatListRef.current && sortedMessages.length > 0) {
                     setTimeout(() => {
                       flatListRef.current.scrollToEnd({ animated: false });
                       setHasScrolledInitially(true);
